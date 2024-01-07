@@ -21,64 +21,93 @@
 // 6. Write to the connection
 // 7. Close the connection
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <ctype.h>
+#include <server.h>
 
-int main() {
+int main()
+{
     // Create a socket
     printf("Configuring local address...\n");
-    struct sockaddr_in server;
-    server.sin_family = AF_INET; // IPv4
-    server.sin_port = htons(8080); // Port 8080
-    server.sin_addr.s_addr = INADDR_ANY; // Bind to any address
+    struct sockaddr_in hints;
+    memset(&hints, 0, sizeof(hints));   // Zero out the struct
+    hints.sin_family = AF_INET;         // IPv4
+    hints.sin_port = htons(8080);       // Port 8080
+    hints.sin_addr.s_addr = INADDR_ANY; // Bind to any address
 
     printf("Creating socket...\n");
-    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)); // Reuse address
-    if (socket_fd < 0) {
+    SOCKET socket_listen;
+    int socket_listen = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (!ISVALIDSOCKET(socket_listen))
+    {
         printf("Error: could not create socket\n");
         exit(1);
     }
 
     // Bind the socket to an address
     printf("Binding socket to local address...\n");
-    bind(socket_fd, (struct sockaddr *)&server, sizeof(server));
+    bind(socket_listen, (struct sockaddr *)&hints, sizeof(hints));
 
     // Listen for connections
-    listen(socket_fd, 10);
+    listen(socket_listen, 10);
+
+    fd_set master;
+    FD_ZERO(&master);
+    FD_SET(socket_listen, &master);
+    SOCKET max_socket = socket_listen;
+
+    printf("Waiting for connections...\n");
 
     // For v1.0, we will handle a request and print it to the console
-    while(1) {
-        int client_socket_fd = accept(socket_fd, NULL, NULL);
-        if (client_socket_fd < 0) {
-            printf("Error: could not establish new connection\n");
+    while (1)
+    {
+        fd_set reads;
+        reads = master;
+        if (select(max_socket + 1, &reads, 0, 0, 0) < 0)
+        { // select() will wait for a connection
+            printf("Error: select() failed\n");
             exit(1);
         }
 
-        // Read from the connection
-        char buffer[1024];
-        int bytes_read = read(client_socket_fd, buffer, 1024);
-        if (bytes_read < 0) {
-            printf("Error: could not read from socket\n");
-            exit(1);
-        }
+        SOCKET i;
+        for (i = 1; i <= max_socket; ++i)
+        {
+            if (FD_ISSET(i, &reads)) // Check if socket is ready
+            {
+                if (i == socket_listen) // New connection
+                {
+                    struct sockaddr_in client_address; // Client address
+                    socklen_t client_len = sizeof(client_address);
+                    SOCKET socket_client = accept(socket_listen, (struct sockaddr *)&client_address, &client_len);
+                    if (!ISVALIDSOCKET(socket_client))
+                    {
+                        printf("Error: accept() failed\n");
+                        exit(1);
+                    }
+                    FD_SET(socket_client, &master); // Add socket to master set
+                    if (socket_client > max_socket)
+                    { // Keep track of max socket, so we know when to stop searching for connections
+                        max_socket = socket_client;
+                    }
 
-        // Print the request to the console
-        printf("%s\n", buffer);
-
-        // Write to the connection a dummy response
-        char response[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\n\r\nHello world!";
-        int bytes_written = write(client_socket_fd, response, strlen(response));
-        if (bytes_written < 0) {
-            printf("Error: could not write to socket\n");
-            exit(1);
+                    char address_buffer[100];
+                    getnameinfo((struct sockaddr *)&client_address, client_len, address_buffer, sizeof(address_buffer), 0, 0, NI_NUMERICHOST);
+                    printf("New connection from %s\n", address_buffer);
+                }
+                else { // Handle existing connection
+                    char read[1024];
+                    int bytes_received = recv(i, read, 1024, 0);
+                    if (bytes_received < 1)
+                    {
+                        FD_CLR(i, &master);
+                        CLOSESOCKET(i);
+                        continue;
+                    }
+                    printf("Received %d bytes: %.*s", bytes_received, bytes_received, read)
+                }
+            }
         }
-        close(client_socket_fd);
     }
-    close(socket_fd);
+    close(socket_listen);
     return 0;
 }
