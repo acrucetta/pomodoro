@@ -26,6 +26,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+const char *blocked_websites[] = {"info.cern.ch"};
+const int NUM_BLOCKED_WEBSITES = 1;
+
+int is_website_blocked(const char *host)
+{
+    int i;
+    for (i = 0; i < NUM_BLOCKED_WEBSITES; ++i)
+    {
+        if (strcmp(host, blocked_websites[i]) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main()
 {
     // Create a socket
@@ -94,9 +110,10 @@ int main()
 
                     char address_buffer[100];
                     getnameinfo((struct sockaddr *)&client_address, client_len, address_buffer, sizeof(address_buffer), 0, 0, NI_NUMERICHOST);
-                    printf("New connection from %s\n", address_buffer);
+                    printf("New proxy connection for %s\n", address_buffer);
                 }
-                else { // Handle existing connection
+                else
+                { // Handle existing connection
                     char read[1024];
                     int bytes_received = recv(i, read, 1024, 0);
                     if (bytes_received < 1)
@@ -105,7 +122,8 @@ int main()
                         CLOSESOCKET(i);
                         continue;
                     }
-                    printf("Received %d bytes: %.*s", bytes_received, bytes_received, read);
+                    read[bytes_received] = '\0';
+                    printf("%s", read);
                 }
             }
         }
