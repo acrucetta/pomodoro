@@ -21,8 +21,10 @@
 // 6. Write to the connection
 // 7. Close the connection
 
+#include "server.h"
 #include <ctype.h>
-#include <server.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main()
 {
@@ -36,12 +38,12 @@ int main()
 
     printf("Creating socket...\n");
     SOCKET socket_listen;
-    int socket_listen = socket(AF_INET, SOCK_STREAM, 0);
+    socket_listen = socket(AF_INET, SOCK_STREAM, 0);
 
     if (!ISVALIDSOCKET(socket_listen))
     {
         printf("Error: could not create socket\n");
-        exit(1);
+        return 1;
     }
 
     // Bind the socket to an address
@@ -103,7 +105,7 @@ int main()
                         CLOSESOCKET(i);
                         continue;
                     }
-                    printf("Received %d bytes: %.*s", bytes_received, bytes_received, read)
+                    printf("Received %d bytes: %.*s", bytes_received, bytes_received, read);
                 }
             }
         }
