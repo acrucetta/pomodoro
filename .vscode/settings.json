@@ -4,6 +4,9 @@
         "*.rmd": "markdown",
         "*.sql": "sql",
         "*.yml": "yaml",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "stdlib.h": "c",
+        "ctype.h": "c",
+        "server.h": "c"
     }
 }

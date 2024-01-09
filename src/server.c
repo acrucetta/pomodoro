@@ -42,6 +42,41 @@ int is_website_blocked(const char *host)
     return 0;
 }
 
+/*
+Open connection to client - opens connection at <hostname, port>
+*/
+
+int client_connect(char *hostname, int port) {
+    int clientfd;
+    struct hostent *hp;
+    struct sockaddr_in serveraddr;
+
+    if ((clientfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      return -1;
+    }
+
+    // Fill in the server's IP address and port
+    if ((hp = gethostbyname(hostname)) == NULL) {
+      return -2;
+    }
+    bzero((char *) &serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    bcopy((char *)hp->h_addr_list[0],
+          (char *)&serveraddr.sin_addr.s_addr, hp->h_length);
+    serveraddr.sin_port = htons(port);
+
+    // Establish a connection with the server
+    if (connect(clientfd, (SA *) &serveraddr, sizeof(serveraddr)) < 0) {
+      return -1;
+    }
+    return clientfd;
+}
+
+
+/*
+Main Server:
+ 
+*/
 int main()
 {
     // Create a socket
@@ -124,6 +159,16 @@ int main()
                     }
                     read[bytes_received] = '\0';
                     printf("%s", read);
+
+                    char hostname[256], path[1024];
+                    sscanf(read, "GET http://%s", hostname);
+                    printf(path, "%[^/]/%s", hostname, path);
+
+                    // TODO: Extract hostname and path from HTTP request
+                    // TODO: Establish connection to host
+                    // TODO: Send HTTP request to host
+                    // TODO: Receive response from host
+                    // TODO: Send response to client
                 }
             }
         }

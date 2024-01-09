@@ -30,10 +30,15 @@ Integrate with Pomodoro Timer
 
 ## TO-DO's
 - [X] Build a pomodoro timer with a 25 min countdown
-- [] Parse a text file and print it to the console
-- [] Create a proxy server to listen to HTTP requests
+- [X] Parse a text file and print it to the console
+- [X] Create a proxy server to listen to HTTP requests
+    - Extract hostname and path from the request
+    - Establish a connection with the target server
+    - Send the request to the target server
+    - Receive the response from the target server
+    - Send the response to the client
 - [] Enhance the server to handle HTTPs requests
-- [] Test the proxy server with dummy input
+- [X] Test the proxy server with dummy input
 - [] Inspect the server requests and print them to the console
 - [] Block a dummy website from the requests to the server
 - [] Integrate it with the pomodoro timer
