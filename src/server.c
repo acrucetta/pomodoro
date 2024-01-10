@@ -10,23 +10,19 @@
 // same time. When a connection is ready, the select() function will return
 // and the server will be able to handle the connection.
 
-// v1.0 Handle and parse HTTP requests
-
-// Steps for a server to handle a connection:
+// Proxy Server Workflow
 // 1. Create a socket
 // 2. Bind the socket to an address
 // 3. Listen for connections
 // 4. Accept a connection
-// 5. Read from the connection
-// 6. Write to the connection
+// 5. Read from the connection (Start connection with client)
+// 6. Write to the connection (Start connection with host)
 // 7. Close the connection
 
 #include "server.h"
 #include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-const char *blocked_websites[] = {"info.cern.ch"};
+const char *blocked_websites[] = {"www.wikipedia.org"};
 const int NUM_BLOCKED_WEBSITES = 1;
 
 int is_website_blocked(const char *host)
@@ -45,38 +41,80 @@ int is_website_blocked(const char *host)
 /*
 Open connection to client - opens connection at <hostname, port>
 */
-
-int client_connect(char *hostname, int port) {
+int client_connect(char *hostname, int port)
+{
     int clientfd;
     struct hostent *hp;
     struct sockaddr_in serveraddr;
 
-    if ((clientfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      return -1;
+    if ((clientfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        return -1;
     }
 
     // Fill in the server's IP address and port
-    if ((hp = gethostbyname(hostname)) == NULL) {
-      return -2;
+    if ((hp = gethostbyname(hostname)) == NULL)
+    {
+        return -2;
     }
-    bzero((char *) &serveraddr, sizeof(serveraddr));
+    bzero((char *)&serveraddr, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
     bcopy((char *)hp->h_addr_list[0],
           (char *)&serveraddr.sin_addr.s_addr, hp->h_length);
     serveraddr.sin_port = htons(port);
 
     // Establish a connection with the server
-    if (connect(clientfd, (SA *) &serveraddr, sizeof(serveraddr)) < 0) {
-      return -1;
+    if (connect(clientfd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
+    {
+        return -1;
     }
     return clientfd;
 }
 
-
 /*
-Main Server:
- 
+Handles the buffer with the HTTP request. It will:
+- Read the client request
+- Extract the target URL
+- Open a connection with the target server
+- Forward the client's request to the target server
+- Forward the target server's response to the client
 */
+void client_request_handler(char* buffer)
+{
+    return;
+}
+
+// Extract website from URL
+// Example: http://www.google.com:8080/index.html
+// --> www.google.com
+char* extract_website(char* url)
+{
+    char* website = malloc(strlen(url) + 1);
+    char* start = strstr(url, "//");
+    if (start == NULL)
+    {
+        start = url;
+    }
+    else
+    {
+        start += 2;
+    }
+    // We're at the start of the prefix e.g., www. 
+    char* end = strstr(start, ":");
+    if (end == NULL)
+    {
+        end = strstr(start, "/");
+    }
+    if (end == NULL)
+    {
+        end = url + strlen(url);
+    }
+    strncpy(website, start, end - start);
+    website[end - start] = '\0';
+    return website;
+}
+
+/* MAIN LOOP */
 int main()
 {
     // Create a socket
@@ -159,16 +197,20 @@ int main()
                     }
                     read[bytes_received] = '\0';
                     printf("%s", read);
-
-                    char hostname[256], path[1024];
-                    sscanf(read, "GET http://%s", hostname);
-                    printf(path, "%[^/]/%s", hostname, path);
-
-                    // TODO: Extract hostname and path from HTTP request
-                    // TODO: Establish connection to host
-                    // TODO: Send HTTP request to host
-                    // TODO: Receive response from host
-                    // TODO: Send response to client
+                    char method[10], url[1024], protocol[10];
+                    sscanf(read, "%s %s %s", method, url, protocol);
+                    printf("Host --> %s", url);
+                    // Just get the domain so we can see if its blocked
+                    // We need to remove the http:// and the port number
+                    char* website = extract_website(url);
+                    if (is_website_blocked(website))
+                    {
+                        printf("Website is blocked\n");
+                    }
+                    else
+                    {
+                        printf("Website is not blocked\n");
+                    }
                 }
             }
         }
