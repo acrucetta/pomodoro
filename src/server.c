@@ -22,9 +22,16 @@
 #include "server.h"
 #include <ctype.h>
 
+
+/* 
+WEBSITE BLOCKING
+*/
+
 const char *blocked_websites[] = {"www.wikipedia.org"};
 const int NUM_BLOCKED_WEBSITES = 1;
 
+// Check if website is blocked
+// Returns 1 if website is blocked, 0 otherwise
 int is_website_blocked(const char *host)
 {
     int i;
@@ -36,52 +43,6 @@ int is_website_blocked(const char *host)
         }
     }
     return 0;
-}
-
-/*
-Open connection to client - opens connection at <hostname, port>
-*/
-int client_connect(char *hostname, int port)
-{
-    int clientfd;
-    struct hostent *hp;
-    struct sockaddr_in serveraddr;
-
-    if ((clientfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        return -1;
-    }
-
-    // Fill in the server's IP address and port
-    if ((hp = gethostbyname(hostname)) == NULL)
-    {
-        return -2;
-    }
-    bzero((char *)&serveraddr, sizeof(serveraddr));
-    serveraddr.sin_family = AF_INET;
-    bcopy((char *)hp->h_addr_list[0],
-          (char *)&serveraddr.sin_addr.s_addr, hp->h_length);
-    serveraddr.sin_port = htons(port);
-
-    // Establish a connection with the server
-    if (connect(clientfd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
-    {
-        return -1;
-    }
-    return clientfd;
-}
-
-/*
-Handles the buffer with the HTTP request. It will:
-- Read the client request
-- Extract the target URL
-- Open a connection with the target server
-- Forward the client's request to the target server
-- Forward the target server's response to the client
-*/
-void client_request_handler(char* buffer)
-{
-    return;
 }
 
 // Extract website from URL
@@ -114,7 +75,67 @@ char* extract_website(char* url)
     return website;
 }
 
-/* MAIN LOOP */
+/*
+NETWORKING
+*/
+
+// Open connection to client - opens connection at <hostname, port>
+int host_connect(char *hostname, int port)
+{
+    int hostfd;
+    struct hostent *hp;
+    struct sockaddr_in serveraddr;
+
+    if ((hostfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        return -1;
+    }
+
+    // Fill in the server's IP address and port
+    if ((hp = gethostbyname(hostname)) == NULL)
+    {
+        return -2;
+    }
+    bzero((char *)&serveraddr, sizeof(serveraddr));
+    serveraddr.sin_family = AF_INET;
+    bcopy((char *)hp->h_addr_list[0],
+          (char *)&serveraddr.sin_addr.s_addr, hp->h_length);
+    serveraddr.sin_port = htons(port);
+
+    // Establish a connection with the server
+    if (connect(hostfd, (SA *)&serveraddr, sizeof(serveraddr)) < 0)
+    {
+        return -1;
+    }
+    return hostfd;
+}
+
+// Forward request to target server and send response to client
+void forward_request(SOCKET client_socket, const char *request, const char* host)
+{
+    int server_socket = host_connect(host, 80);
+    if (!ISVALIDSOCKET(server_socket))
+    {
+        printf("Error: could not connect to target server\n");
+        exit(1);
+    }
+    send_request(server_socket, request);
+    char response[4096];
+    int bytes_received = recv(server_socket, response, 4096, 0);
+    if (bytes_received < 1)
+    {
+        printf("Error: could not receive response from target server\n");
+        exit(1);
+    }
+    response[bytes_received] = '\0';
+    send(client_socket, response, strlen(response), 0);
+    CLOSESOCKET(server_socket);
+}
+
+/*
+MAIN LOOP 
+*/
+
 int main()
 {
     // Create a socket
@@ -199,17 +220,17 @@ int main()
                     printf("%s", read);
                     char method[10], url[1024], protocol[10];
                     sscanf(read, "%s %s %s", method, url, protocol);
-                    printf("Host --> %s", url);
                     // Just get the domain so we can see if its blocked
                     // We need to remove the http:// and the port number
                     char* website = extract_website(url);
                     if (is_website_blocked(website))
                     {
-                        printf("Website is blocked\n");
+                        char *response = "HTTP/1.1 403 Forbidden\r\n\r\nBlocked by Proxy";
+                        send(i, response, strlen(response), 0);
                     }
                     else
                     {
-                        printf("Website is not blocked\n");
+                        forward_request(i, read, url);
                     }
                 }
             }
