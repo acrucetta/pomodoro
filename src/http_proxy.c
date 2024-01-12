@@ -19,7 +19,7 @@
 // 6. Write to the connection (Start connection with host)
 // 7. Close the connection
 
-#include "server.h"
+#include "http_proxy.h"
 #include <ctype.h>
 
 
@@ -27,7 +27,7 @@
 WEBSITE BLOCKING
 */
 
-const char *blocked_websites[] = {"www.wikipedia.org"};
+const char *blocked_websites[] = {"www.http2demo.io"};
 const int NUM_BLOCKED_WEBSITES = 1;
 
 // Check if website is blocked
@@ -119,16 +119,25 @@ void forward_request(SOCKET client_socket, const char *request, const char* host
         printf("Error: could not connect to target server\n");
         exit(1);
     }
-    send_request(server_socket, request);
-    char response[4096];
-    int bytes_received = recv(server_socket, response, 4096, 0);
-    if (bytes_received < 1)
+    // Send the original request to the target server
+    if (send(server_socket, request, strlen(request), 0) < 0)
     {
-        printf("Error: could not receive response from target server\n");
-        exit(1);
+        printf("Error: failed to send request to target server\n");
+        CLOSESOCKET(server_socket);
+        return;
     }
-    response[bytes_received] = '\0';
-    send(client_socket, response, strlen(response), 0);
+    // Continuously read response from target server and send to client
+    char response[4096]; 
+    int bytes_received;
+    while ((bytes_received = recv(server_socket, response, sizeof(response), 0)) > 0)
+    {
+        if (send(client_socket, response, bytes_received, 0) < 0)
+        {
+            printf("Error: failed to send response to client\n");
+            break;
+        }
+    }
+
     CLOSESOCKET(server_socket);
 }
 
