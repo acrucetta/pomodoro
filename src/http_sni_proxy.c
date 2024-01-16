@@ -46,8 +46,7 @@ int is_website_blocked(const char *host)
 }
 
 // Extract website from URL
-// Example: http://www.google.com:8080/index.html
-// --> www.google.com
+// Example: http://www.google.com:8080/index.html --> www.google.com
 char* extract_website(char* url)
 {
     char* website = malloc(strlen(url) + 1);
@@ -78,6 +77,10 @@ char* extract_website(char* url)
 /*
 NETWORKING
 */
+
+// Extract SNI from Client Hello
+// Returns 1 if SNI is found, 0 otherwise
+
 
 // Open connection to client - opens connection at <hostname, port>
 int host_connect(char *hostname, int port)
@@ -205,6 +208,10 @@ int main()
                         printf("Error: accept() failed\n");
                         exit(1);
                     }
+
+                    // TODO: Peek at the first few bytes of the request to see if it is a CONNECT request
+                    // If it is, we want to read the SNI from the Client Hello
+
                     FD_SET(socket_client, &master); // Add socket to master set
                     if (socket_client > max_socket)
                     { // Keep track of max socket, so we know when to stop searching for connections

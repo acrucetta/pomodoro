@@ -8,5 +8,6 @@
         "stdlib.h": "c",
         "ctype.h": "c",
         "server.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }
