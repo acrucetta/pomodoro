@@ -1,3 +1,50 @@
+# Pomodoro Timer with Website Blocker
+
+## Overview
+This project is a Pomodoro Timer implemented in C. The Pomodoro technique is a time management method that uses a timer to break work into intervals, traditionally 25 minutes in length, separated by short breaks. This program also includes a feature to block distracting websites during these work intervals by modifying the system's `/etc/hosts` file.
+
+## Features
+- **Pomodoro Timer:** Standard 25-minute focus timer with console output for time remaining.
+- **Website Blocking:** Automatically blocks a list of specified websites during the focus period.
+- **Signal Handling:** Gracefully handles `SIGINT` (Ctrl+C) signal to unblock websites and exit the program.
+
+## Requirements
+- Unix-like operating system (Linux, macOS)
+- Root privileges for modifying the `/etc/hosts` file
+- GCC or another C compiler for building the program
+
+## Installation
+1. Clone this repository to your local machine.
+   ```
+   git clone [repository-url]
+   ```
+2. Navigate to the cloned directory.
+   ```
+   cd [repository-directory]
+   ```
+
+## Usage
+1. Compile the program.
+   ```
+   gcc -o pomodoro_timer main.c
+   ```
+2. Run the program with root privileges.
+   ```
+   sudo ./pomodoro_timer s
+   ```
+   The 's' argument starts the timer and activates website blocking.
+
+## Configuring Websites to Block
+Edit the `websites.txt` file in the project directory to list the websites you want to block, one per line. Example:
+```
+facebook.com
+youtube.com
+twitter.com
+```
+
+## Important Notes
+- The program requires root privileges to modify the `/etc/hosts` file.
+- Make sure to use the program responsibly, as it modifies a system file.
 
 
 ## Application
@@ -7,38 +54,3 @@ i
 - The program will load a list of websites it wants to block from the environmental variables or a config file
 - The programm will start a proxy server and block any requests for websites the user doesn't want to visit
 - Once the timer is finished, the proxy server will shut down and allow the user to visit those websites again
-
-## Development 
-
-Pomodoro Timer
-- Simple timer with a 25 min countdown and 5 min breaks if the user likes
-
-Load Blocked Websites
-- Read and parse a list of websites from a .env or text file
-
-Proxy Server
-- Initialize a server to listen to HTTP/HTTPS ports
-- Intercept and inspect each web request
-
-Website Blocking
-- Enhance the proxy server to block requests to specified websites
-    - Check if the URL is in the blocked list
-    - Deny access if not on the list; show a dummy value
-
-Integrate with Pomodoro Timer
-- Link the proxy operation with the timer; start or stop based on the timing
-
-## TO-DO's
-- [X] Build a pomodoro timer with a 25 min countdown
-- [X] Parse a text file and print it to the console
-- [X] Create a proxy server to listen to HTTP requests
-    - Extract hostname and path from the request
-    - Establish a connection with the target server
-    - Send the request to the target server
-    - Receive the response from the target server
-    - Send the response to the client
-- [] Enhance the server to handle HTTPs requests
-- [X] Test the proxy server with dummy input
-- [] Inspect the server requests and print them to the console
-- [] Block a dummy website from the requests to the server
-- [] Integrate it with the pomodoro timer
