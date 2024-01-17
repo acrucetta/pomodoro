@@ -3,6 +3,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 
 // POMODORO TIMER //
 
@@ -43,6 +44,80 @@ void start_timer(Timer *timer)
   }
 }
 
+// MODIFY HOSTS FILE //
+
+#define HOSTS_FILE "/etc/hosts"
+
+void print_hosts_file()
+{
+  FILE *file = fopen(HOSTS_FILE, "r");
+  if (!file)
+  {
+    printf("Error: could not open file /etc/hosts\n");
+    exit(1);
+  }
+  char line[100];
+  while (fgets(line, 100, file))
+  {
+    printf("%s", line);
+  }
+  fclose(file);
+}
+
+int add_website_to_hosts_file(const char *website)
+{
+  FILE *file = fopen(HOSTS_FILE, "a");
+  if (!file)
+  {
+    printf("Error: could not open file /etc/hosts\n");
+    EXIT_FAILURE;
+  }
+  fprintf(file, "0.0.0.0 %s\n", website);
+  fclose(file);
+  return EXIT_SUCCESS;
+}
+
+int remove_website_from_hosts_file(const char *website)
+{
+  FILE *file = fopen(HOSTS_FILE, "r");
+  if (!file)
+  {
+    printf("Error: could not open file /etc/hosts\n");
+    exit(1);
+  }
+  FILE *temp_file = fopen("temp.txt", "w");
+  if (!temp_file)
+  {
+    printf("Error: could not open file temp.txt\n");
+    exit(1);
+  }
+  char line[100];
+  while (fgets(line, 100, file))
+  {
+    if (strstr(line, website) == NULL)
+    {
+      fputs(line, temp_file);
+    }
+  }
+  fclose(file);
+  fclose(temp_file);
+  remove(HOSTS_FILE);
+  rename("temp.txt", HOSTS_FILE);
+  return 0;
+}
+
+// SIGNAL HANDLING //
+
+void exit_gracefully(int sig)
+{
+  signal(SIGINT, SIG_DFL);
+  printf("Exiting...\n");
+  for (size_t i = 0; i < websites.size; i++) {
+    remove_website_from_hosts_file(websites.websites[i]);
+  }
+  exit(0);
+}
+
 // PARSING WEBSITES //
 
 typedef struct {
@@ -52,6 +127,9 @@ typedef struct {
 
 #define MAX_LINE_LENGTH 100
 #define INITIAL_SIZE 10
+
+// Global variable
+Websites websites;
 
 Websites read_lines(const char *filename) {
   FILE *file = fopen(filename, "r");
@@ -78,7 +156,8 @@ Websites read_lines(const char *filename) {
 
 int main(int argc, char **argv)
 {
-  Websites websites = read_lines("../websites.txt");
+  websites = read_lines("../websites.txt");
+  signal(SIGINT, exit_gracefully);
   if (websites.size == 0) {
     printf("Error: no websites found\n");
     exit(1);
@@ -99,7 +178,13 @@ int main(int argc, char **argv)
     // Start timer
     if (arg[0] == 's')
     {
+      for (size_t i = 0; i < websites.size; i++) {
+        add_website_to_hosts_file(websites.websites[i]);
+      }
       start_timer(&timer);
+    }
+    for (size_t i = 0; i < websites.size; i++) {
+      // remove_website_from_hosts_file(websites.websites[i]);
     }
     printf("Timer stopped!\n");
   }
