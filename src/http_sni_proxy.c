@@ -211,6 +211,8 @@ int main()
 
                     // TODO: Peek at the first few bytes of the request to see if it is a CONNECT request
                     // If it is, we want to read the SNI from the Client Hello
+                    char peek_buffer[1024];
+                    ssize_t bytes_received = recv(socket_client, peek_buffer, sizeof(peek_buffer), MSG_PEEK);
 
                     FD_SET(socket_client, &master); // Add socket to master set
                     if (socket_client > max_socket)
