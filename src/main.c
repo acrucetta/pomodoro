@@ -35,7 +35,7 @@ void stop_timer(Timer *timer)
 
 void start_timer(Timer *timer)
 {
-  timer->end_time = time(NULL) + (60);
+  timer->end_time = time(NULL) + (60 * 25);
   timer->is_running = 1;
 
   while (timer->is_running)
@@ -47,8 +47,8 @@ void start_timer(Timer *timer)
     {
       stop_timer(timer);
      }
-     // Sleep for 2 second
-      sleep(2);
+     // Sleep for 30 seconds
+      sleep(30);
   }
 }
 
