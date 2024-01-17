@@ -16,14 +16,15 @@ This project is a Pomodoro Timer implemented in C. The Pomodoro technique is a t
 ## Installation
 1. Clone this repository to your local machine.
    ```
-   git clone [repository-url]
+   git clone acrucetta/pomodoro
    ```
 2. Navigate to the cloned directory.
    ```
-   cd [repository-directory]
+   cd pomodoro
    ```
 
 ## Usage
+
 1. Compile the program.
    ```
    gcc -o pomodoro_timer main.c
@@ -33,6 +34,10 @@ This project is a Pomodoro Timer implemented in C. The Pomodoro technique is a t
    sudo ./pomodoro_timer s
    ```
    The 's' argument starts the timer and activates website blocking.
+
+3. When the timer is finished, the program will automatically unblock the websites and exit.
+
+4. To exit the program before the timer is finished, press `Ctrl+C` to send the `SIGINT` signal.
 
 ## Configuring Websites to Block
 Edit the `websites.txt` file in the project directory to list the websites you want to block, one per line. Example:
