@@ -5,6 +5,14 @@
 #include <string.h>
 #include <signal.h>
 
+// GLOBAL VARIABLES //
+typedef struct {
+  char **websites; // array of strings
+  size_t size; // size of array
+} Websites;
+
+Websites websites;
+
 // POMODORO TIMER //
 
 typedef struct
@@ -120,16 +128,9 @@ void exit_gracefully(int sig)
 
 // PARSING WEBSITES //
 
-typedef struct {
-  char **websites; // array of strings
-  size_t size; // size of array
-} Websites;
 
 #define MAX_LINE_LENGTH 100
 #define INITIAL_SIZE 10
-
-// Global variable
-Websites websites;
 
 Websites read_lines(const char *filename) {
   FILE *file = fopen(filename, "r");

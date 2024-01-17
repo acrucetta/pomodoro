@@ -15,6 +15,7 @@
 // The sockaddr_in structure is used to store addresses for the Internet address family.
 typedef struct sockaddr SA;
 
+int extract_sni(unsigned char *client_hello, int client_hello_len);
 
 #include <stdio.h>
 #include <stdlib.h>
