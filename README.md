@@ -50,12 +50,4 @@ twitter.com
 ## Important Notes
 - The program requires root privileges to modify the `/etc/hosts` file.
 - Make sure to use the program responsibly, as it modifies a system file.
-
-
-## Application
-i
-- User starts pomodoro timer for 25 minutes
-- The program will start a timer and show the user the end time
-- The program will load a list of websites it wants to block from the environmental variables or a config file
-- The programm will start a proxy server and block any requests for websites the user doesn't want to visit
-- Once the timer is finished, the proxy server will shut down and allow the user to visit those websites again
+- The program will not work on Windows systems yet, as it uses Unix-specific system calls.
